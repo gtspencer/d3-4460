@@ -1,0 +1,108 @@
+<!DOCTYPE HTML>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <style>
+      body {
+      font: 12px sans-serif;
+    }
+    .bChart circle {
+        stroke: black;
+        opacity: 0.6;
+    }
+    .bChart text {
+        visibility: hidden;
+        text-anchor: middle;
+    }
+    .bChart:hover circle {
+        opacity: 1;
+    }
+
+    .bChart:hover text {
+        visibility: visible;
+    }
+
+    .bData text {
+        visibility: hidden;
+        text-anchor: middle;
+    }
+
+
+    .bData.hovered text {
+        visibility: visible;
+        stroke: black;
+    }
+
+    .dot.hovered {
+        stroke: black;
+    }
+
+    .dot.hidden {
+        opacity: 0.1;
+    }
+    </style>
+</head>
+<body>
+    <div id="main" style="text-align:center;">
+        <h1>IMDb Score vs. Total Budget</h1>
+        <h3>Click on a circle to view IMDB page</h3>
+        <h5>Circle size relative to gross profit</h5>
+        <svg width="1300" height="700"></svg>
+        <h4 align="center" style="font-weight:bold"><b>Filters:</b></h4>
+        <div id="dropDown" align="center">
+            <label for="yearSelect">Year: </label>
+            <select class="custom-select" id="yearSelect" onchange="onYearChanged()">
+              <option value="2010">2010</option>
+              <option value="2011">2011</option>
+              <option value="2012">2012</option>
+              <option value="2013">2013</option>
+              <option value="2014">2014</option>
+              <option value="2015">2015</option>
+              <option value="2016">2016</option>
+              <option selected value="All">All</option>
+            </select>
+
+            <label for="genreSelect">Genres: </label>
+            <select class="custom-select" id="genreSelect" onchange="onGenreChanged()">
+              <option selected value="All Genres">All Genres</option>
+            </select>
+            <button id="clearFilters" onclick="clearAllFilters()">Clear Filters</button>
+        </div>
+
+        <p>&#13;&#10;</p>
+        <div id="searchbar" align="center">
+            <text>Enter a Movie to Search: </text>
+            <input type="text" id="searchInput" placeholder="Title">
+            <button id="searchButton" type="button" onclick="search()">Search</button>
+            <button id="clearButton" type="button" onclick="clearSearch()" >Clear</button>
+        </div>
+        <p><br></p>
+        <text>______________________________________________</text>
+        <div id="labels" align="center">
+            <h3 id="title" onclick="searchMovie()" style="cursor:pointer">Movie: </h3>
+            <p id="year">Year: </p>
+            <p id="director" style="bold;cursor:pointer" onclick="searchDirector()">Director: </p>
+            <text id="stars" style="bold;cursor:pointer">Stars: </text>
+            <text id="a1" onclick="searchActor1()" style="cursor:pointer"> </text>
+            <text id="a2" onclick="searchActor2()" style="cursor:pointer"> </text>
+            <text id="a3" onclick="searchActor3()" style="cursor:pointer"> </text>
+            <p id="gross">Gross ($): </p>
+            <p id="budget">Budget ($): </p>
+            <p id="duration">Duration: </p>
+            <p id="rating">Age Rating: </p>
+            <p id="genres">Genres: </p>
+            <p id="keywords">Plot Keywords: </p>
+            <p id="language">Language: </p>
+            <p id="country">Country: </p>
+            <p id="color">Film Hue: </p>
+            <p id="aspect">Aspect Ratio: </p>
+            <p id="faces">Faces in Poster: </p>
+            
+            <p>_________________________________________________</p>
+            <p style="font-weight:bold">**Click on the movie title, director, or an actor name above to search more **</p>
+        </div>
+    </div>
+    <script src="https://d3js.org/d3.v4.min.js"></script>
+    <script src="./main.js"></script>
+</body>
+</html>
