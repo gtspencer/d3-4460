@@ -1,54 +1,51 @@
-selectedYear = "All";
-selectedGenre = "All Genres";
+//Variables initialization
+var yearSel = "All";
+var genreSel = "All Genres";
 
-var xAttributes = ['movieLikes', 'duration'];
-
-var yAxisMap = { 'movieLikes' : 'Movie Facebook Likes',
+var attributesX = ['movieLikes', 'duration'];
+var axisMapY = { 'movieLikes' : 'Movie Facebook Likes',
                  'duration' : 'Duration (min)'}
+var subGraphColor = { 'movieLikes' : '#ba29c3',
+                 'duration' : '#29b0c3'}
 
-var trellisColor = { 'movieLikes' : '#56d945',
-                 'duration' : '#3379eb'}
+var find = true;
 
-var flag = true;
-
-var currentDirector = "none";
-var currentA1 = "none";
-var currentA2 = "none";
-var currentA3 = "none";
-var currentMovie = "none";
-
-//var currentActor1
+var directorCurrent = "none";
+var a1Current = "none";
+var a2Current = "none";
+var a3Current = "none";
+var movieCurrent = "none";
 
 var svg = d3.select('svg');
+var wSVG = +svg.attr('width');
+var hSVG = +svg.attr('height');
 
-var svgWidth = +svg.attr('width');
-var svgHeight = +svg.attr('height');
+var wGraph = wSVG - 200;
 
-var chartWidth = svgWidth - 200;
-var chartHeight = 420 - 50 - 40;
+var hGraph = 330;
 
-var trellisWidth = svgWidth/2.8;
-var trellisHeight = svgHeight/4;
+var wSubGraph = wSVG/2.8;
+
+var hSubGraph = hSVG/4;
 
 var domains = { 'imdb' : [0.0, 10.0] };
 
-var bubbleChart = svg.append('g')
-    .attr('class', 'bubblechart')
+var bubbleGraph = svg.append('g')
+    .attr('class', 'bubbleGraph')
     .attr('transform', 'translate('+[80, 50]+')');
 
-var trellis = svg.append('g')
-    .attr('class', 'trellis')
-    .attr('transform', 'translate('+[80, chartHeight+80*1.85-15]+')');
+var SubGraph = svg.append('g')
+    .attr('transform', 'translate('+[80, hGraph+80*1.85-15]+')');
 
-var legendColors = ['#00ff00','#29e6ff','#ec973c','#ff0000','#b42695', '#232323'];
-var legendWords = ['G', 'PG','PG-13', 'R', 'Unrated', 'Not Rated'];
+var contentColors = ['#64f22b','#ffff00','#ffa700','#ff0000','#e90df6', '#d4d4d4'];
+var contentLegend = ['G', 'PG','PG-13', 'R', 'Unrated', 'Not Rated'];
 
 var genres = [];
 
-var xScale = d3.scaleLinear()
-var yScale = d3.scaleLinear().range([chartHeight,0]).domain(domains['imdb']);
-var rScale = d3.scaleSqrt().range([0,40]);
-var grossScale = d3.scaleLinear().range([trellisHeight, 0]);
+var scaleX = d3.scaleLinear()
+var scaleY = d3.scaleLinear().range([hGraph,0]).domain(domains['imdb']);
+var scaleR = d3.scaleSqrt().range([0,40]);
+var scaleGross = d3.scaleLinear().range([hSubGraph, 0]);
 
 d3.csv('./movies.csv',
     function(d){
@@ -57,83 +54,64 @@ d3.csv('./movies.csv',
             budget: +d.budget,
             movieTitle: d.movie_title,
             year: +d.title_year,
-            directorName: d.director_name,
-            directFbLikes: d.director_facebook_likes,
-            actor1: d.actor_1_name,
-            actor2: d.actor_2_name,
-            actor3: d.actor_3_name,
+            dirName: d.director_name,
+            dirLikes: d.director_facebook_likes,
+            a1: d.actor_1_name,
+            a2: d.actor_2_name,
+            a3: d.actor_3_name,
             a1Likes: d.actor_1_facebook_likes,
             a2Likes: d.actor_2_facebook_likes,
             a3Likes: d.actor_3_facebook_likes,
-            castTotalLikes: +d.cast_total_facebook_likes,
             movieLikes: +d.movie_facebook_likes,
-
             genres: d.genres,
             imdbScore: +d.imdb_score,
             language: d.language,
             country: d.country,
             contentRating: d.content_rating,
             duration: +d.duration,
-
             color: d.color,
-            numCritForReviews: +d.num_critic_for_reviews,
-            numUserForReviews: +d.num_user_for_reviews,
-            numVotedUsers: +d.num_voted_users,
             faceNumInPoster: +d.facenumber_in_poster,
             plotKeywords: d.plot_keywords,
             imdbLink: d.movie_imdb_link,
             aspectRatio: +d.aspect_ratio,
-
         }
     },
+    // functions needed
     function(error, dataset){
         if(error) {
             console.error(error);
             return;
         }
-
         movies = dataset;
-
-
-        grossExtent = d3.extent(dataset, function(d){ return d.gross; });
-        budgetExtent = d3.extent(dataset, function(d) { return d.budget; });
-        maxMovieLikes = d3.max(dataset, function(d) {return d.movieLikes });
-        maxDuration = d3.max(dataset, function(d) { return d.duration; });
-
-        extentMap = { 'movieLikes' : [0, maxMovieLikes],
-                      'duration' : [0, maxDuration]}
-
-        grossScale.domain(grossExtent);
-
+        extentGross = d3.extent(dataset, function(d){ return d.gross; });
+        extentBudget = d3.extent(dataset, function(d) { return d.budget; });
+        movieLikesMaximum = d3.max(dataset, function(d) {return d.movieLikes });
+        durationMaximum = d3.max(dataset, function(d) { return d.duration; });
+        extentMap = { 'movieLikes' : [0, movieLikesMaximum],
+                      'duration' : [0, durationMaximum]}
+        scaleGross.domain(extentGross);
         nestByMovieTitle = d3.nest()
             .key(function(d) { return d.movieTitle})
             .entries(dataset);
-
-        bubbleChart.append('text')
-            .attr('x', chartWidth/2)
-            .attr('y', chartHeight + 30)
+        bubbleGraph.append('text')
+            .attr('x', wGraph/2)
+            .attr('y', hGraph + 30)
             .text('Total Budget');
-
-        bubbleChart.append('text')
-            .attr('x', -chartHeight)
+        bubbleGraph.append('text')
+            .attr('x', -hGraph)
             .attr('y', -30)
             .attr('transform', 'rotate(270)')
             .text('IMDb Score');
-
-        bubbleChart.append('text')
+        bubbleGraph.append('text')
             .attr('x', -60)
             .attr('y', -15)
             .style('align', 'center');
-            //.text('IMDb Score vs. Total Budget - Click on a circle to view IMDB page');
-
-        trellis.append('text')
+        SubGraph.append('text')
             .attr('x', -60)
             .attr('y', -15)
-            .attr("transform", "translate("+((svgWidth/3) + 100)+","+0+")")
+            .attr("transform", "translate("+((wSVG/3) + 100)+","+0+")")
             .text('Gross Relations');
-
-        updateChart(selectedYear, selectedGenre, '/');
-        
+        updateGraph(yearSel, genreSel, '/');
         var set = new Set()
         movies.forEach(function(d) {
             var temp = d['genres'].split('|');
@@ -141,49 +119,43 @@ d3.csv('./movies.csv',
                 set.add(v);
             })
         })
-
-        var sorted = Array.from(set).sort();
-
+        var sortedArr = Array.from(set).sort();
         genreSelect = d3.select('#genreSelect');
         genreOptions = genreSelect.selectAll('option')
-            .data(sorted)
+            .data(sortedArr)
             .enter()
             .append('option')
             .text(function (d) { return d; })
-
-        makeTrellis(selectedYear, selectedGenre, '/');
-
+        makeSubGraph(yearSel, genreSel, '/');
     });
-
-//-------------------Functions---------------------------------
-
+// search function
 function search(){
     var text = d3.select('#searchInput').node().value;
-    updateChart(selectedYear, selectedGenre, text);
-    makeTrellis(selectedYear, selectedGenre, text);
+    updateGraph(yearSel, genreSel, text);
+    makeSubGraph(yearSel, genreSel, text);
 }
-
+// function to clear search
 function clearSearch() {
     d3.select('#searchInput').node().value = "";
-    updateChart(selectedYear, selectedGenre, '/');
-    makeTrellis(selectedYear, selectedGenre, '/');
+    updateGraph(yearSel, genreSel, '/');
+    makeSubGraph(yearSel, genreSel, '/');
 }
-
+// function for yeaar change
 function onYearChanged() {
     var select = d3.select('#yearSelect').node();
-    selectedYear = select.options[select.selectedIndex].value;
-    updateChart(selectedYear,selectedGenre, '/');
-    makeTrellis(selectedYear, selectedGenre, '/');
+    yearSel = select.options[select.selectedIndex].value;
+    updateGraph(yearSel, genreSel, '/');
+    makeSubGraph(yearSel, genreSel, '/');
 }
-
+//function for genre change
 function onGenreChanged() {
     var select = d3.select('#genreSelect').node();
-    selectedGenre = select.options[select.selectedIndex].value;
-    updateChart(selectedYear, selectedGenre, '/');
-    makeTrellis(selectedYear, selectedGenre, '/');
+    genreSel = select.options[select.selectedIndex].value;
+    updateGraph(yearSel, genreSel, '/');
+    makeSubGraph(yearSel, genreSel, '/');
 }
-
-function updateChart(year, genre, text) {
+// function to update the Graph
+function updateGraph(year, genre, text) {
     var filtered;
 
     if(text != '/') {
@@ -192,19 +164,19 @@ function updateChart(year, genre, text) {
             return title.includes(text.toLowerCase());
         })
     } else {
-        var filteredYears = movies.filter(function(d){
+        var yearsFiltered = movies.filter(function(d){
             if (year == "All") {return true;}
             return year == d.year;
         });
 
-        var filteredYearAndGenres = filteredYears.filter(function(d){
+        var yearsGenresFiltered = yearsFiltered.filter(function(d){
             if (genre == "All Genres") {return true;}
             return d.genres.includes(genre);
         });
-        filtered = filteredYearAndGenres;
+        filtered = yearsGenresFiltered;
     }
 
-    var dot = svg.selectAll('.block')
+    var point = svg.selectAll('.block')
         .classed('filtered', function(d) {
             if(text != '/') {
                 var title = d['movieTitle'].toLowerCase();
@@ -228,39 +200,37 @@ function updateChart(year, genre, text) {
             }
         })
 
-    var maxBud = d3.max(filtered, function(d){
+    var budgetMaximum = d3.max(filtered, function(d){
         return d.budget;
     });
 
-    xScale.domain([0, maxBud*1.1]).range([0, chartWidth-80]);
+    scaleX.domain([0, budgetMaximum*1.1]).range([0, wGraph-80]);
 
-    rScale.domain(grossExtent);
+    scaleR.domain(extentGross);
 
     svg.selectAll('.xGrid').remove();
-    var xGrid = bubbleChart.append('g')
+    var xGrid = bubbleGraph.append('g')
         .attr('class', 'xGrid')
-        .attr('transform', 'translate('+[0, chartHeight]+')')
-        .call(d3.axisBottom(xScale)
-            .tickSizeInner(-chartHeight)
+        .attr('transform', 'translate('+[0, hGraph]+')')
+        .call(d3.axisBottom(scaleX)
+            .tickSizeInner(-hGraph)
             .tickFormat(d3.format(".2s")));
 
-     var yGrid = bubbleChart.append('g')
+     var yGrid = bubbleGraph.append('g')
         .attr('class', 'yGrid')
-        .call(d3.axisLeft(yScale).ticks(20)
-        .tickSizeInner(-chartWidth+80)
+        .call(d3.axisLeft(scaleY).ticks(20)
+        .tickSizeInner(-wGraph+80)
         .tickFormat(d3.format(".1f")));
 
 
-    var bChart = bubbleChart.selectAll('.bChart')
+    var bGraph = bubbleGraph.selectAll('.bGraph')
         .data(filtered, function(d) { return d.movieTitle});
 
-    var bChartEnter = bChart.enter()
+    var bGraphEnter = bGraph.enter()
         .append('g')
-        .attr('class', 'bChart')
+        .attr('class', 'bGraph')
         .on('mouseover', function(d){
-            //console.log(flag);
-
-            svg.selectAll('.dot')
+            svg.selectAll('.point')
                 .classed('hidden', function(v) {
                     return v != d;
                 })
@@ -268,36 +238,33 @@ function updateChart(year, genre, text) {
                     return v == d;
                 })
 
-            bubbleChart.selectAll('image').remove();
-            flag = true;
+            bubbleGraph.selectAll('image').remove();
+            find = true;
 
-            var hoveredMatch = svg.selectAll('.bData')
+            var matchHovered = svg.selectAll('.bMovies')
                 .classed('hovered', function(i) {
                 return (d.movieTitle == i.movieTitle);
             });
 
-            var tempKeywords = d['plotKeywords'].split('|');
-            var stringKeywords = "";
-            //console.log(tempKeywords);
-            tempKeywords.forEach(function(d) {
-                stringKeywords += d + ", ";
+            var temporaryKeyWords = d['plotKeywords'].split('|');
+            var stringKeyWords = "";
+            temporaryKeyWords.forEach(function(d) {
+                stringKeyWords += d + ", ";
             })
-            stringKeywords = stringKeywords.substring(0, stringKeywords.length - 2);
+            stringKeyWords = stringKeyWords.substring(0, stringKeyWords.length - 2);
 
-            var tempGenres = d['genres'].split('|');
+            var temporaryGenres = d['genres'].split('|');
             var stringGenres = "";
-            //console.log(genreKeywords);
-            tempGenres.forEach(function(d) {
+            temporaryGenres.forEach(function(d) {
                 stringGenres += d + ", ";
             })
             stringGenres = stringGenres.substring(0, stringGenres.length - 2);
 
             document.getElementById("title").innerHTML = "Movie: " + "<u>" + d.movieTitle.substring(0, d.movieTitle.length - 1) + "</u>";
-            document.getElementById("director").innerHTML = "Director: <u>" + d.directorName + " (" + d3.format(',')(d.directFbLikes) + " likes)</u>";
-            //document.getElementById("stars").innerHTML = "Stars: " + d.actor1 + ", " + d.actor2 + ", and " + d.actor3;
-            document.getElementById("a1").innerHTML = "<u>" + d.actor1 + " (" + d3.format(',')(d.a1Likes) + " likes)</u>, ";
-            document.getElementById("a2").innerHTML = "<u>" + d.actor2 + " (" + d3.format(',')(d.a2Likes) + " likes)</u>, and ";
-            document.getElementById("a3").innerHTML = "<u>" + d.actor3 + " (" + d3.format(',')(d.a3Likes) + " likes)</u>";
+            document.getElementById("director").innerHTML = "Director: <u>" + d.dirName + " (" + d3.format(',')(d.dirLikes) + " likes)</u>";
+            document.getElementById("a1").innerHTML = "<u>" + d.a1 + " (" + d3.format(',')(d.a1Likes) + " likes)</u>, ";
+            document.getElementById("a2").innerHTML = "<u>" + d.a2 + " (" + d3.format(',')(d.a2Likes) + " likes)</u>, and ";
+            document.getElementById("a3").innerHTML = "<u>" + d.a3 + " (" + d3.format(',')(d.a3Likes) + " likes)</u>";
             document.getElementById("gross").innerHTML = "Gross: $" + d3.format(',')(d.gross);
             document.getElementById("budget").innerHTML = "Budget: $" + d3.format(',')(d.budget);
             document.getElementById("duration").innerHTML = "Duration: " + d.duration + " mins";
@@ -307,25 +274,25 @@ function updateChart(year, genre, text) {
             document.getElementById("aspect").innerHTML = "Aspect Ratio: " + d.aspectRatio;
             document.getElementById("color").innerHTML = "Film Hue: " + d.color;
             document.getElementById("faces").innerHTML = "Faces in Poster: " + d.faceNumInPoster;
-            document.getElementById("keywords").innerHTML = "Plot Keywords: " + stringKeywords;
+            document.getElementById("keywords").innerHTML = "Plot Keywords: " + stringKeyWords;
             document.getElementById("country").innerHTML = "Country: " + d.country;
             document.getElementById("language").innerHTML = "Language: " + d.language;
 
-            setSearchTerm(d.directorName);
-            setA1Search(d.actor1);
-            setA2Search(d.actor2);
-            setA3Search(d.actor3);
+            setSearchTerm(d.dirName);
+            setA1Search(d.a1);
+            setA2Search(d.a2);
+            setA3Search(d.a3);
             setMovieSearch(d.movieTitle);
 
         })
         .on('mouseout', function(d){
-            flag = false;
-            var hoverMatched = svg.selectAll('.bData')
+            find = false;
+            var hoverMatched = svg.selectAll('.bMovies')
             .classed('hovered', function(i) {
                 return false;
             });
 
-            svg.selectAll('.dot')
+            svg.selectAll('.point')
                 .classed('hidden', function(v) {
                     return false;
                 })
@@ -333,61 +300,60 @@ function updateChart(year, genre, text) {
                     return false;
                 })
 
-            bubbleChart.selectAll('image').remove();
+            bubbleGraph.selectAll('image').remove();
 
         })
         .on('click', function(d) {
-            //console.log("clicked " + d.movieTitle);
             var win = window.open(d.imdbLink, '_blank');
             win.focus();
         });
 
-    var bData = bubbleChart.selectAll('.bData')
+    var bMovies = bubbleGraph.selectAll('.bMovies')
         .data(movies);
 
-    var bDataEnter = bData.enter()
+    var bMoviesEnter = bMovies.enter()
         .append('g')
-        .attr('class', 'bData')
-        .attr('transform','translate(' +[chartWidth-250, 400]+ ')');
+        .attr('class', 'bMovies')
+        .attr('transform','translate(' +[wGraph-250, 400]+ ')');
 
 
-    bChart.merge(bChartEnter)
+    bGraph.merge(bGraphEnter)
         .transition()
         .duration(600)
         .attr('transform', function(d){
-            return 'translate(' +(xScale(d.budget))+ ', ' + (yScale(d.imdbScore)) + ')';
+            return 'translate(' +(scaleX(d.budget))+ ', ' + (scaleY(d.imdbScore)) + ')';
         });
 
-    bChartEnter.append('circle')
+    bGraphEnter.append('circle')
         .transition()
         .duration(600)
         .attr('r', function(d) {
-            return rScale(d.gross);
+            return scaleR(d.gross);
         })
         .style('fill', function(d){
             if (d.contentRating === "G") {
-                return '#00ff00';
+                return contentColors[0];
             } else if (d.contentRating === "PG") {
-                return '#29e6ff';
+                return contentColors[1];
             } else if (d.contentRating === "PG-13") {
-                return '#ec973c';
+                return contentColors[2];
             } else if (d.contentRating === "R") {
-                return '#ff0000';
+                return contentColors[3];
             } else if (d.contentRating === "Unrated") {
-                return '#b42695';
+                return contentColors[4];
             } else if (d.contentRating === "Not Rated") {
-                return '#232323';
+                return contentColors[5];
             } else {
 
             }
         });
 
-    var legend = bubbleChart.selectAll('.legend')
+    var legend = bubbleGraph.selectAll('.legend')
         .data([1])
         .enter()
         .append('g')
         .attr('class', 'legend')
-        .attr('transform', 'translate('+[chartWidth - 50, chartHeight - 170]+')');
+        .attr('transform', 'translate('+[wGraph - 50, hGraph - 170]+')');
 
         legend.append('rect')
             .attr('x', 0)
@@ -408,9 +374,9 @@ function updateChart(year, genre, text) {
             .style('text-anchor', 'start');
 
 
-        legendColors.forEach(function(d) {
+        contentColors.forEach(function(d) {
             var legendItems = legend.selectAll('.legendItems')
-                .data(legendColors);
+                .data(contentColors);
 
             var legendItemsEnter = legendItems.enter()
                 .append('g')
@@ -433,7 +399,7 @@ function updateChart(year, genre, text) {
                 .attr('transform', function(a,b) {
                     return 'translate( '+ [0, b*15 + 3]+ ')';})
                 .text(function(d,i) {
-                    return legendWords[i];
+                    return contentLegend[i];
                 })
                 .style('font-size', '0.7em')
                 .style('text-anchor', 'start');
@@ -441,19 +407,19 @@ function updateChart(year, genre, text) {
         })
 
 
-    bChartEnter.append('text')
+    bGraphEnter.append('text')
         .attr('dy', '0.7em')
         .attr('transform', 'translate(' +[0, -20]+ ')')
         .text(function(d){
                 return d.movieTitle;
             });
 
-    bChart.exit().remove();
-    bData.exit().remove();
+    bGraph.exit().remove();
+    bMovies.exit().remove();
 }
-
-function makeTrellis(year, genre, text) {
-    svg.selectAll('.dot').remove();
+// function to make subgraph
+function makeSubGraph(year, genre, text) {
+    svg.selectAll('.point').remove();
 
     if(text != '/') {
         filtered = movies.filter(function(d) {
@@ -461,156 +427,152 @@ function makeTrellis(year, genre, text) {
             return title.includes(text.toLowerCase());
         })
     } else {
-        var filteredYears = movies.filter(function(d){
+        var yearsFiltered = movies.filter(function(d){
             if (year == "All") {return true;}
             return year == d.year;
         });
 
-        var filteredYearAndGenres = filteredYears.filter(function(d){
+        var yearsGenresFiltered = yearsFiltered.filter(function(d){
             if (genre == "All Genres") {return true;}
             return d.genres.includes(genre);
         });
-        filtered = filteredYearAndGenres;
+        filtered = yearsGenresFiltered;
     }
 
-    var charts = trellis.selectAll('.cell')
-        .data(xAttributes)
+    var Graphs = SubGraph.selectAll('.cell')
+        .data(attributesX)
         .enter()
         .append('g')
-        .attr('class', 'cell')
         .attr("transform", function(d, i) {
-            return 'translate(' +[1.2 * trellisWidth * i]+ ')';
+            return 'translate(' +[1.2 * wSubGraph * i]+ ')';
         });
 
-    xAttributes.forEach(function(attribute, i) {
+    attributesX.forEach(function(attribute, i) {
 
-    var cell = trellis.append('g')
-        .attr('class', 'cell')
+    var cell = SubGraph.append('g')
         .attr("transform", function(d) {
-            return 'translate(' +[1.2 * trellisWidth * i]+ ')';
+            return 'translate(' +[1.2 * wSubGraph * i]+ ')';
         });
 
 
-    xScale.range([0, trellisWidth]).domain(extentMap[attribute]);
+    scaleX.range([0, wSubGraph]).domain(extentMap[attribute]);
 
     var xAxis = cell.append('g')
-        .attr('class', 'trellis axis x')
-        .attr('transform', 'translate(' +[0, trellisHeight]+ ')')
-        .call(d3.axisBottom(xScale).ticks(5).tickFormat(d3.format(".2s")))
+        .attr('transform', 'translate(' +[0, hSubGraph]+ ')')
+        .call(d3.axisBottom(scaleX).ticks(5).tickFormat(d3.format(".2s")))
 
     var yAxis = cell.append('g')
-        .attr('class', 'trellis axis y')
-        .call(d3.axisLeft(grossScale).tickFormat(d3.format(".2s")));
+        .call(d3.axisLeft(scaleGross).tickFormat(d3.format(".2s")));
 
     cell.append('text')
         .attr('class', 'tpyaxis')
-        .attr('x', -trellisHeight/2)
+        .attr('x', -hSubGraph/2)
         .attr('y', -45)
         .attr('transform', 'rotate(270)')
         .text('Gross ($)');
 
     cell.append('text')
         .attr('class', 'tpxaxis')
-        .attr('x', trellisWidth/2)
-        .attr('y', trellisHeight + 35)
-        .text(yAxisMap[attribute]);
+        .attr('x', wSubGraph/2)
+        .attr('y', hSubGraph + 35)
+        .text(axisMapY[attribute]);
 
-    var dots = cell.selectAll('.dot')
+    var points = cell.selectAll('.point')
         .data(filtered);
 
-    var dotsEnter = dots.enter()
+    var pointsEnter = points.enter()
         .append('circle')
-        .attr('class', 'dot')
+        .attr('class', 'point')
         .attr('r', 2.5)
-        .style('fill', trellisColor[attribute]);
+        .style('fill', subGraphColor[attribute]);
 
-    dots.merge(dotsEnter)
+    points.merge(pointsEnter)
         .attr('cx', function(d) {
 
-            return xScale(d[attribute]);
+            return scaleX(d[attribute]);
         })
         .attr('cy', function(d) {
-            return grossScale(d['gross']);
+            return scaleGross(d['gross']);
         })
 
-    dots.exit().remove()
+    points.exit().remove()
     })
 }
-
+//function to search for director
 function searchDirector() {
-    if (currentDirector == "none") {
+    if (directorCurrent == "none") {
         window.alert("No Director Selected!");
         return;
     }
-    var win = window.open("https://www.google.com/search?q=" + currentDirector, '_blank');
+    var win = window.open("https://www.google.com/search?q=" + directorCurrent, '_blank');
     win.focus();
 }
-
-function searchActor1() {
-    if (currentA1 == "none") {
+// function to search for first actor
+function searcha1() {
+    if (a1Current == "none") {
         window.alert("No Actor Selected!");
         return;
     }
-    var win = window.open("https://www.google.com/search?q=" + currentA1, '_blank');
+    var win = window.open("https://www.google.com/search?q=" + a1Current, '_blank');
     win.focus();
 }
-
-function searchActor2() {
-    if (currentA2 == "none") {
+// function to search for second actor
+function searcha2() {
+    if (a2Current == "none") {
         window.alert("No Actor Selected!");
         return;
     }
-    var win = window.open("https://www.google.com/search?q=" + currentA2, '_blank');
+    var win = window.open("https://www.google.com/search?q=" + a2Current, '_blank');
     win.focus();
 }
-
-function searchActor3() {
-    if (currentA3 == "none") {
+//function to search for third actor
+function searcha3() {
+    if (a3Current == "none") {
         window.alert("No Actor Selected!");
         return;
     }
-    var win = window.open("https://www.google.com/search?q=" + currentA3, '_blank');
+    var win = window.open("https://www.google.com/search?q=" + a3Current, '_blank');
     win.focus();
 }
-
+//function to search for movie
 function searchMovie() {
-    if (currentA3 == "none") {
+    if (a3Current == "none") {
         window.alert("No Movie Selected!");
         return;
     }
-    var win = window.open("https://www.google.com/search?q=" + currentMovie, '_blank');
+    var win = window.open("https://www.google.com/search?q=" + movieCurrent, '_blank');
     win.focus();
 }
-
+// function to set the search term
 function setSearchTerm(name) {
-    currentDirector = name;
+    directorCurrent = name;
 }
-
+// function to set A1 search
 function setA1Search(name) {
-    currentA1 = name;
+    a1Current = name;
 }
-
+// function to set A2 search
 function setA2Search(name) {
-    currentA2 = name;
+    a2Current = name;
 }
-
+// function to set A3 search
 function setA3Search(name) {
-    currentA3 = name;
+    a3Current = name;
 }
-
+// function to set movie search
 function setMovieSearch(name) {
-    currentMovie = name;
+    movieCurrent = name;
 }
-
+// function for clearing all filters
 function clearAllFilters() {
     d3.select('#searchInput').node().value = "";
-    updateChart(selectedYear, selectedGenre, '/');
-    makeTrellis(selectedYear, selectedGenre, '/');
+    updateGraph(yearSel, genreSel, '/');
+    makeSubGraph(yearSel, genreSel, '/');
 
-    selectedYear = "All";
-    selectedGenre = "All Genres";
-    updateChart(selectedYear, selectedGenre, '/');
-    makeTrellis(selectedYear, selectedGenre, '/');
+    yearSel = "All";
+    genreSel = "All Genres";
+    updateGraph(yearSel, genreSel, '/');
+    makeSubGraph(yearSel, genreSel, '/');
 
     var val = "All";
     var sel = document.getElementById('yearSelect');
@@ -631,5 +593,4 @@ function clearAllFilters() {
           break;
         }
     }
-
 }
